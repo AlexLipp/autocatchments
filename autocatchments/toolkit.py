@@ -1,12 +1,11 @@
 from typing import Tuple
+
 import matplotlib
 import numpy as np
 from landlab import RasterModelGrid
 from landlab.components import FlowAccumulator, SinkFillerBarnes
 from landlab.components.flow_accum.flow_accum_bw import (
-    make_ordered_node_array,
-    find_drainage_area_and_discharge,
-)
+    find_drainage_area_and_discharge, make_ordered_node_array)
 from matplotlib.colors import LogNorm
 from osgeo import gdal
 

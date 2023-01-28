@@ -1,9 +1,11 @@
 import os
 from datetime import datetime
-from autocatchments.toolkit import viz_drainage_area
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+
+from autocatchments.toolkit import viz_drainage_area
 
 """Functions useful for processing samples wihch are gathered on a drainage network 
 (e.g., geochemical observations etc.)"""
@@ -131,7 +133,7 @@ def process_output_dict(node_catchment_dict, model_grid):
 
     """
     x_upper_left = model_grid.xy_of_lower_left[0]
-    y_upper_left = model_grid.xy_of_lower_left[1] + model_grid.dy*model_grid.shape[1]
+    y_upper_left = model_grid.xy_of_lower_left[1] + model_grid.dy * model_grid.shape[1]
 
     out_area = np.zeros(model_grid.shape).flatten() - 999
     N = 1
@@ -139,15 +141,15 @@ def process_output_dict(node_catchment_dict, model_grid):
     for node, upst_nodes in node_catchment_dict.items():
         y, x = np.unravel_index(node, model_grid.shape)
         Ns += [N]
-        xs += [x_upper_left + (model_grid.dx*x)]
-        ys += [y_upper_left - (model_grid.dy*y)]
+        xs += [x_upper_left + (model_grid.dx * x)]
+        ys += [y_upper_left - (model_grid.dy * y)]
         out_area[upst_nodes] = N
         N += 1
     out_area = out_area.reshape(model_grid.shape)
 
     plt.imshow(np.log10(model_grid.at_node["drainage_area"].reshape(model_grid.shape)))
     plt.show()
-    plt.scatter(xs,ys)
+    plt.scatter(xs, ys)
     plt.show()
     return (np.array([Ns, xs, ys]).T, out_area)
 
@@ -221,16 +223,12 @@ def viz_sample_site_results(locs, areas, grid):
     cb = plt.colorbar()
     cb.set_label("Area ID")
     plt.title("Sample areas")
-    plt.scatter(
-        x=locs[:, 1], y=locs[:, 2], c="black", marker="x", s=50
-    )
+    plt.scatter(x=locs[:, 1], y=locs[:, 2], c="black", marker="x", s=50)
     plt.xlabel("x / units")
     plt.ylabel("y / units")
     plt.subplot(1, 2, 2)
     viz_drainage_area(grid)
-    plt.scatter(
-        x=locs[:, 1], y=locs[:, 2], c="red", marker="x", s=50
-    )
+    plt.scatter(x=locs[:, 1], y=locs[:, 2], c="red", marker="x", s=50)
     plt.tight_layout()
 
 
@@ -241,7 +239,7 @@ def snap_to_drainage(model_grid, sample_sites, threshold):
         (see auto_catchments.load_topo and load_d8)
 
         sample_sites (Nx2 float array): Coordinates [x,y] (in units of the base DEM, e.g., km) of sampled
-        localities. These will not necessarily lie on a modelled channel in the DEM.  
+        localities. These will not necessarily lie on a modelled channel in the DEM.
 
         threshold (float): Drainage area (in units of base DEM) threshold, above which we define
         a node to be a `channel'. Nodes with area less than this cannot be snapped to.
@@ -252,7 +250,7 @@ def snap_to_drainage(model_grid, sample_sites, threshold):
         (in units of the base DEM, e.g., km).
     """
     x_upper_left = model_grid.xy_of_lower_left[0]
-    y_upper_left = model_grid.xy_of_lower_left[1] + model_grid.dy*model_grid.shape[0]
+    y_upper_left = model_grid.xy_of_lower_left[1] + model_grid.dy * model_grid.shape[0]
     channels = model_grid.at_node["drainage_area"] > threshold
     channels_y_ind, channels_x_ind = np.unravel_index(
         np.ravel(np.where(channels)), model_grid.shape
@@ -262,8 +260,8 @@ def snap_to_drainage(model_grid, sample_sites, threshold):
     )
 
     samps_rel_upp_left = np.zeros(sample_sites.shape)
-    samps_rel_upp_left[:,0] = sample_sites[:,0] - x_upper_left
-    samps_rel_upp_left[:,1] = y_upper_left - sample_sites[:,1] 
+    samps_rel_upp_left[:, 0] = sample_sites[:, 0] - x_upper_left
+    samps_rel_upp_left[:, 1] = y_upper_left - sample_sites[:, 1]
     snapped = np.zeros(sample_sites.shape)
     for i in range(sample_sites.shape[0]):
         sample = samps_rel_upp_left[i, :]
