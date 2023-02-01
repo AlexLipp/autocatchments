@@ -1,3 +1,5 @@
+*.ipynb
+*.txt
 *.aux*
 build/
 autocatchments.egg-info/
