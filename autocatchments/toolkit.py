@@ -68,9 +68,7 @@ def load_topo(path):
 
     elev_arr, ds = read_geo_file(path)
     dx_dy, ll_xy = get_gdal_grid_metadata(ds)
-    model_grid = RasterModelGrid(
-        elev_arr.shape, xy_spacing=dx_dy, xy_of_lower_left=ll_xy
-    )
+    model_grid = RasterModelGrid(elev_arr.shape, xy_spacing=dx_dy, xy_of_lower_left=ll_xy)
     model_grid.add_field("topographic__elevation", elev_arr.flatten().astype(float))
     print("Filling sinks (can be slow)")
     sb = SinkFillerBarnes(model_grid, ignore_overfill=True)
@@ -87,6 +85,7 @@ def read_geo_file(filename: str) -> Tuple[np.ndarray, gdal.Dataset]:
     band = ds.GetRasterBand(1)
     arr = band.ReadAsArray()
     return arr, ds
+
 
 def get_neighbour_indices(ind: int, array: np.ndarray) -> list[list]:
     """Gets indices of the nodes surrounding node `ind' (and itself) in array `array'.
@@ -132,9 +131,9 @@ def d8_to_receivers(d8: np.ndarray) -> np.ndarray:
         [get_neighbour_indices(i, receivers) for i in receivers[1:-1, 1:-1].flatten()]
     )
     # Use list of neighbours + D8 to select receiver node
-    receivers[1:-1, 1:-1] = np.choose(
-        d8[1:-1, 1:-1].flatten(), core_neighbours
-    ).reshape(receivers[1:-1, 1:-1].shape)
+    receivers[1:-1, 1:-1] = np.choose(d8[1:-1, 1:-1].flatten(), core_neighbours).reshape(
+        receivers[1:-1, 1:-1].shape
+    )
     return receivers.flatten()
 
 
@@ -178,9 +177,7 @@ def load_from_node_arrays(
     receivers = np.loadtxt(path_to_receiver_nodes).astype(np.int64)
     ordered_nodes = np.loadtxt(path_to_ordered_nodes).astype(np.int64)
     print("Initialising model grid")
-    grid = RasterModelGrid(
-        shape, xy_spacing=xy_spacing, xy_of_lower_left=xy_of_lower_left
-    )
+    grid = RasterModelGrid(shape, xy_spacing=xy_spacing, xy_of_lower_left=xy_of_lower_left)
     _ = grid.add_field("flow__upstream_node_order", ordered_nodes)
     _ = grid.add_field("flow__receiver_node", receivers)
     print("Calculating drainage area")
@@ -189,3 +186,25 @@ def load_from_node_arrays(
     )
     _ = grid.add_field("drainage_area", a)
     return grid
+
+
+def geographic_coords_to_model_xy(
+    xy_coords: Tuple[np.ndarray, np.ndarray], grid: RasterModelGrid
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Converts geographical coordinates (from lower left) into model
+    grid coordinates (from upper left)"""
+    xy_of_upper_left = grid.xy_of_lower_left[0], grid.xy_of_lower_left[1] + grid.dy * grid.shape[0]
+    x = (xy_coords[0] - xy_of_upper_left[0]) / grid.dx
+    y = (xy_of_upper_left[1] - xy_coords[1]) / grid.dy
+    return x, y
+
+
+def model_xy_to_geographic_coords(
+    model_xy_coords: Tuple[np.ndarray, np.ndarray], grid: RasterModelGrid
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Converts model grid coordinates (from upper left) to geographical coordinates
+    (from lower left)"""
+    xy_of_upper_left = grid.xy_of_lower_left[0], grid.xy_of_lower_left[1] + grid.dy * grid.shape[0]
+    x = xy_of_upper_left[0] + model_xy_coords[0] * grid.dx
+    y = xy_of_upper_left[1] - model_xy_coords[1] * grid.dy
+    return x, y

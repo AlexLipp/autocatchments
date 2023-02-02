@@ -1,3 +1,5 @@
+*.history
+./examples/outputs/
 *.ipynb
 *.txt
 *.aux*

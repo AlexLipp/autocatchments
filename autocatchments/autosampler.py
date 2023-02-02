@@ -5,7 +5,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from autocatchments.toolkit import viz_drainage_area
+from autocatchments.toolkit import (
+    model_xy_to_geographic_coords,
+    viz_drainage_area,
+    geographic_coords_to_model_xy,
+)
 
 """Functions useful for processing samples wihch are gathered on a drainage network 
 (e.g., geochemical observations etc.)"""
@@ -103,9 +107,7 @@ def get_sample_nodes_by_area(model_grid, target_area):
         # If number of nodes in new subcatchment greater than threshold we add it to output
         if len(unvis_up_nodes) > nodes_per_samp:
             print("\t * Found a sample locality *")
-            sample_nodes[
-                node
-            ] = unvis_up_nodes  # Add node to list with corresponding catchment
+            sample_nodes[node] = unvis_up_nodes  # Add node to list with corresponding catchment
             uV = fast_delete(
                 uV, unvis_up_nodes
             )  # Remove the new catchment  from array of unvisited nodes
@@ -132,25 +134,20 @@ def process_output_dict(node_catchment_dict, model_grid):
         given the NaN value of -999.
 
     """
-    x_upper_left = model_grid.xy_of_lower_left[0]
-    y_upper_left = model_grid.xy_of_lower_left[1] + model_grid.dy * model_grid.shape[1]
 
     out_area = np.zeros(model_grid.shape).flatten() - 999
     N = 1
-    Ns, xs, ys = [], [], []
+    Ns, model_xs, model_ys = [], [], []
     for node, upst_nodes in node_catchment_dict.items():
         y, x = np.unravel_index(node, model_grid.shape)
         Ns += [N]
-        xs += [x_upper_left + (model_grid.dx * x)]
-        ys += [y_upper_left - (model_grid.dy * y)]
+        model_xs += [x]
+        model_ys += [y]
         out_area[upst_nodes] = N
         N += 1
     out_area = out_area.reshape(model_grid.shape)
 
-    plt.imshow(np.log10(model_grid.at_node["drainage_area"].reshape(model_grid.shape)))
-    plt.show()
-    plt.scatter(xs, ys)
-    plt.show()
+    xs, ys = model_xy_to_geographic_coords((np.array(model_xs), np.array(model_ys)), model_grid)
     return (np.array([Ns, xs, ys]).T, out_area)
 
 
@@ -176,15 +173,13 @@ def save_autosampler_results(locs, areas, model_grid, out_dir):
 
     """
     np.savetxt(
-        out_dir + "/sample_sites.csv",
+        out_dir + "/optimal_sample_sites.csv",
         X=locs,
         delimiter=",",
         header="Area ID, x, y",
         comments="",
     )
-    if os.path.exists(
-        out_dir + "/optimal_area_IDs.asc"
-    ):  # Allows over-writing of .asc files
+    if os.path.exists(out_dir + "/optimal_area_IDs.asc"):  # Allows over-writing of .asc files
         os.remove(out_dir + "/optimal_area_IDs.asc")
     _ = model_grid.add_field("optimal_area_IDs", np.flipud(areas))
     model_grid.save(out_dir + "/optimal_area_IDs.asc", names="optimal_area_IDs")
@@ -249,24 +244,25 @@ def snap_to_drainage(model_grid, sample_sites, threshold):
         snapped (Nx2 float array): Coordinates [x,y] of the snapped, drainage aligned sample sites
         (in units of the base DEM, e.g., km).
     """
-    x_upper_left = model_grid.xy_of_lower_left[0]
-    y_upper_left = model_grid.xy_of_lower_left[1] + model_grid.dy * model_grid.shape[0]
+
     channels = model_grid.at_node["drainage_area"] > threshold
     channels_y_ind, channels_x_ind = np.unravel_index(
         np.ravel(np.where(channels)), model_grid.shape
     )
-    channels_xy = np.array(
-        [channels_x_ind * model_grid.dx, channels_y_ind * model_grid.dy]
-    )
+    channels_model_xy = np.array([channels_x_ind, channels_y_ind]).T
 
-    samps_rel_upp_left = np.zeros(sample_sites.shape)
-    samps_rel_upp_left[:, 0] = sample_sites[:, 0] - x_upper_left
-    samps_rel_upp_left[:, 1] = y_upper_left - sample_sites[:, 1]
+    samps_geog_x = sample_sites[:, 0]
+    samps_geog_y = sample_sites[:, 1]
+
+    samps_model_x, samps_model_y = geographic_coords_to_model_xy(
+        (samps_geog_x, samps_geog_y), model_grid
+    )
+    samps_model_xy = np.array([samps_model_x,samps_model_y]).T
     snapped = np.zeros(sample_sites.shape)
     for i in range(sample_sites.shape[0]):
-        sample = samps_rel_upp_left[i, :]
-        diff = channels_xy - sample[:, np.newaxis]
-        closest_channel_coords = channels_xy[:, np.argmin(np.sum(diff**2, axis=0))]
+        sample = samps_model_xy[i,:]
+        diff = channels_model_xy - sample
+        closest_channel_coords = channels_model_xy[np.argmin(np.sum(diff**2, axis=1)),:]
         snapped[i, :] = closest_channel_coords
     return snapped
 
@@ -283,11 +279,11 @@ def coords_to_node_ids(model_grid, coordinates):
         nodes: corresponding node IDs for each coordinate pair"""
 
     n_samples = coordinates.shape[0]
-    nodes = np.zeros(n_samples)
+    nodes = np.zeros(n_samples,dtype=int)
     for i in np.arange(n_samples):
         x, y = coordinates[i, 0], coordinates[i, 1]
-        x_ind = int(np.floor(x / model_grid.dx))
-        y_ind = int(np.floor(y / model_grid.dy))
+        x_ind = int(np.rint(x))
+        y_ind = int(np.rint(y))
         nodes[i] = np.ravel_multi_index((y_ind, x_ind), model_grid.shape)
     return nodes
 
@@ -373,12 +369,12 @@ def load_sample_data(path_to_file):
         sample sites with corresponding sample names.
         This file must have format:
 
-        SampleName | x coordinate | y coordinate
-        -----------------------------------------
-           string  |    float     |     float"""
+        SampleName | x coordinate | y coordinate | ... 
+        -----------------------------------------| ...
+           string  |    float     |     float    | ..."""
 
     data = pd.read_csv(path_to_file).to_numpy()
-    sample_sites = data[:, 1:].astype(float)
+    sample_sites = data[:, 1:3].astype(float)
     sample_names = data[:, 0].astype(str)
     return sample_names, sample_sites
 
@@ -426,24 +422,13 @@ def save_subcatchments(model_grid, sample_catchment_dict, catchment_map, output_
 
     node_IDs = []
     sample_names = []
-    xs = []
-    ys = []
     for label, catchment_dict in sample_catchment_dict.items():
         node_IDs.append(label)  # node ID
         sample_names.append(catchment_dict["SampleName"])
-        x, y = node_to_coord(model_grid, catchment_dict["node"])
-        xs.append(x)
-        ys.append(y)
 
-    outdf = pd.DataFrame(
-        {"Catchment ID": node_IDs, "SampleName": sample_names, "x": xs, "y": ys}
-    )
-    outdf.to_csv(output_dir + "/fitted_localities.csv", index=False)
-    plt.imshow(catchment_map)
-    plt.show()
-    if os.path.exists(
-        output_dir + "/area_IDs.asc"
-    ):  # Allows over-writing of .asc files
+    outdf = pd.DataFrame({"Catchment ID": node_IDs, "SampleName": sample_names})
+    outdf.to_csv(output_dir + "/subcatch_area_IDs.csv", index=False)
+    if os.path.exists(output_dir + "/area_IDs.asc"):  # Allows over-writing of .asc files
         os.remove(output_dir + "/area_IDs.asc")
     _ = model_grid.add_field("area_IDs", np.flipud(catchment_map))
     model_grid.save(output_dir + "/area_IDs.asc", names="area_IDs")
