@@ -30,12 +30,15 @@ An example DEM from [North East Scotland, UK ](https://agupubs.onlinelibrary.wil
 
 ![autocatchments_output](https://user-images.githubusercontent.com/10188895/216290943-1c5dee11-f71f-4e68-a027-1a6093c92d9c.png)
 
-### 
+### 2. Aligning sample sites to drainage networks and getting subcatchments 
+
+![snapped_to_drainage](https://user-images.githubusercontent.com/10188895/216292704-55f08d5c-69f5-4515-8611-aaa582843365.png)
+
+`process_samples_on_rivers.py` shows how to automatically align sample sites to the nearest node with a drainage area greater than a specified threshold. Next, it calculates the unique sub-catchment corresponding to each of these sample sites. This is useful if you have made real observations on a river network but the coordinates of the sample sites [do not precisely align](https://onlinelibrary.wiley.com/doi/abs/10.1029/2007WR006507) with nodes on a model grid. An example of the output is shown above.
 
 ## Feedback 
 
 Any feedback or suggestions are welcome via email, twitter, GitHub issue, carrier pigeon. My contact details are easily located :) 
-
 
 ## Cite
 
