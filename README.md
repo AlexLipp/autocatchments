@@ -4,10 +4,10 @@ This is a series of python scripts I made to make my life easier analysing drain
 
 ## Installation 
 
-- Clone this repository into any location on your hardrive 
+- Clone this repository into any location 
 - Navigate into a conda environment if desired
 - Run `pip install .`
-- The `autocatchment` package can be imported the normal way (e.g., `import autocatchments as ac`)
+- The `autocatchments` package can be imported the normal way (e.g., `import autocatchments as ac`)
 
 ## Usage 
 
