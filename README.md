@@ -15,6 +15,8 @@ Some examples of use are given in the `examples/` subdirectory.
 
 ### 1. Identifying 'optimal' sampling sites to equally subdivide a drainage network 
 
+![autocatchments_output](https://user-images.githubusercontent.com/10188895/216290943-1c5dee11-f71f-4e68-a027-1a6093c92d9c.png)
+
 In `subdivide_basins.py` I show an algorithm that, given a DEM and a target sub-catchment area, identifies N sample sites on a drainage network that sub-divide it into N sub-catchments which have an area greater than the given target area. This algorithm could be useful for designing sample-campaigns we ensure equal _area_ coverage across drainage basins for [geochemical exploration](https://doi.org/10.1016/0375-6742(87)90081-1), and [ecological/environmental monitoring](https://www.biorxiv.org/content/10.1101/2022.01.25.475970v1.abstract). I briefly detail how the algorithm works here but the code is well commented. I don't know if this has been done before (a very brief search found nothing) or whether there is a faster way of doing it (there probably is). Example output is shown below. I make no claim that this is novel or even the best way of solving the problem... but hopefully it is useful. Boris Gailleton helped work out the most efficient approach. 
 
 1. Process input DEM/D8 data (fill sinks and route drainage across DEM using `LandLab` functions). 
@@ -27,8 +29,6 @@ In `subdivide_basins.py` I show an algorithm that, given a DEM and a target sub-
 8. Repeat until all nodes have been visited. 
 
 An example DEM from [North East Scotland, UK ](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2021GC009838) is provided for testing purposes. The above image shows the output from subdividing this DEM into sub-catchments greater than 500 km2 in size. 
-
-![autocatchments_output](https://user-images.githubusercontent.com/10188895/216290943-1c5dee11-f71f-4e68-a027-1a6093c92d9c.png)
 
 ### 2. Aligning sample sites to drainage networks and getting subcatchments 
 
