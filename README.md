@@ -1,3 +1,4 @@
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7598546.svg)](https://doi.org/10.5281/zenodo.7598546)
 # Autocatchments
 
 This is a series of python scripts I made to make my life easier analysing drainage networks. This was designed strictly for personal purposes only so I strongly recommend benchmarking results. Nonetheless, it may be useful if you are interested in: hydrology, fluvial geomorphology, or anything else to do with rivers. 
@@ -42,8 +43,8 @@ Any feedback or suggestions are welcome via email, twitter, GitHub issue, carrie
 
 ## Cite
 
-If you use this and find it useful please cite it as:
-`Lipp, Alex. 2022. AutoCatchments. Software. doi:  10.5281/zenodo.7311352`. 
+If you use this and find it useful please acknowledge it:
+`Alex Lipp. (2023). AlexLipp/autocatchments: v0.2 (v0.2). Zenodo. https://doi.org/10.5281/zenodo.7598546`
 
 Please also acknowledge: `Barnhart et al. 2020. doi: 10.5194/esurf-8-379-2020` and `Barnes et al. 2014. doi: 10.1016/j.cageo.2013.04.024`.
 
